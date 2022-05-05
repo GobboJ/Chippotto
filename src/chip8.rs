@@ -107,7 +107,7 @@ impl Chip8 {
                     self.pc = self.stack[self.sp as usize];
                 }
                 _ => {
-                    println!("{} is not a valid opcode", self.opcode);
+                    println!("{:#04x} is not a valid opcode", self.opcode);
                     self.pc += 2;
                 }
             },
@@ -205,7 +205,7 @@ impl Chip8 {
                         self.reg[15] = (self.reg[j] & 0b1000_0000) >> 7;
                     }
                     _ => {
-                        println!("{} is not a valid opcode", self.opcode);
+                        println!("{:#04x} is not a valid opcode", self.opcode);
                     }
                 }
                 self.pc += 2;
@@ -232,22 +232,22 @@ impl Chip8 {
                 self.pc += 2;
             }
             0xD000 => {
-                // Drawing
-                let x = self.reg[((self.opcode & 0x0F00) >> 8) as usize] as u16;
-                let y = self.reg[((self.opcode & 0x00F0) >> 4) as usize] as u16;
+                let x = self.reg[((self.opcode & 0x0F00) >> 8) as usize] % 64;
+                let y = self.reg[((self.opcode & 0x00F0) >> 4) as usize] % 32;
                 let h = self.opcode & 0x000F;
-                let mut pixel = 0;
 
                 self.reg[15] = 0;
-                for yline in 0..h {
-                    pixel = self.memory[(self.index + yline as u16) as usize];
-                    for xline in 0..8 {
-                        if (pixel & (0x80 >> xline)) != 0 {
-                            if self.display[(x + xline + ((y + yline) * 64)) as usize] == 1 {
+                for row in 0..h {
+                    let pixel = self.memory[(self.index + row) as usize];
+                    for p in 0..8 {
+                        if (pixel & (0x80 >> p)) != 0 {
+                            if x as usize + p as usize >= WIDTH || (y as usize + row as usize) >= HEIGHT {
+                                break;
+                            }
+                            if self.display[(y as usize + row as usize) * WIDTH + (x as usize + p as usize)] == 1 {
                                 self.reg[15] = 1;
                             }
-                            self.display
-                                [((x + xline + ((y + yline) * 64)) % (64 * 32)) as usize] ^= 1;
+                            self.display[(y as usize + row as usize) * WIDTH + (x as usize + p as usize)] ^= 1;
                         }
                     }
                 }
@@ -305,12 +305,13 @@ impl Chip8 {
                         self.index += i as u16 + 1;
                     }
                     _ => {
-                        println!("{} is not a valid opcode", self.opcode)
+                        println!("{:#04x} is not a valid opcode", self.opcode)
                     }
                 }
                 self.pc += 2;
             }
             _ => {
+                println!("{:#04x} is not a valid opcode", self.opcode);
                 self.pc += 2;
             }
         }
