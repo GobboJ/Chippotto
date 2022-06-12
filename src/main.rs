@@ -1,13 +1,13 @@
+use std::{env, fs};
 use raylib::prelude::*;
-mod chip8;
 use chip8::Chip8;
-use std::fs;
+mod chip8;
 
 const SCALING: usize = 10;
 const WINDOW_WIDTH: usize = chip8::WIDTH * SCALING;
 const WINDOW_HEIGHT: usize = chip8::HEIGHT * SCALING;
-const MAIN_COLOR: Color = Color::DARKPURPLE;
-const BACK_COLOR: Color = Color::PINK;
+const MAIN_COLOR: Color = Color::GOLD;
+const BACK_COLOR: Color = Color::DARKGREEN;
 
 fn main() {
     // Initialize Raylib window
@@ -18,7 +18,9 @@ fn main() {
     rl.set_target_fps(60);
 
     // Load game
-    let _game = fs::read("test_opcode.ch8").expect("[!] Error reading file");
+    let args: Vec<String> = env::args().collect();
+    let _game = fs::read(&args[1]).expect("[!] Error reading file");
+    rl.set_window_title(&thread, &format!("Chippotto [{}]", &args[1]));
     let game = _game.as_slice();
     let mut chip8: Chip8 = Chip8::get_chip();
     chip8.load_game(game);
