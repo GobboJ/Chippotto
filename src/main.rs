@@ -1,6 +1,6 @@
-use std::{env, fs};
-use raylib::prelude::*;
 use chip8::Chip8;
+use raylib::{ffi::IsKeyDown, prelude::*};
+use std::{env, fs};
 mod chip8;
 
 const SCALING: usize = 10;
@@ -29,6 +29,19 @@ fn main() {
     while !rl.window_should_close() {
         let mut d = rl.begin_drawing(&thread);
         let img = chip8.get_display();
+
+        unsafe {
+            for i in 48..58 {
+                if IsKeyDown(i) {
+                    chip8.key_press(i as u8 - 48);
+                }
+            }
+            for i in 65..71 {
+                if IsKeyDown(i) {
+                    chip8.key_press(i as u8 - 55);
+                }
+            }
+        }
 
         for y in 0..32 {
             for x in 0..64 {

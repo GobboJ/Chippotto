@@ -26,13 +26,17 @@ pub struct Chip8 {
     opcode: u16,
     memory: [u8; 4096],
     reg: [u8; 16],
-    index: u16,                    // can be u12
-    pc: u16,                       // can be u12
-    display: [u8; WIDTH * HEIGHT], // can be u2
+    index: u16,
+    // can be u12
+    pc: u16,
+    // can be u12
+    display: [u8; WIDTH * HEIGHT],
+    // can be u2
     stack: [u16; 16],
     sp: u16,
     delay_timer: u8,
     sound_timer: u8,
+    key: u8,
 }
 
 impl Chip8 {
@@ -48,6 +52,7 @@ impl Chip8 {
             sp: 0,
             delay_timer: 0,
             sound_timer: 0,
+            key: 0xFF,
         };
 
         let mut i = 0;
@@ -80,10 +85,16 @@ impl Chip8 {
             }
             self.sound_timer -= 1;
         }
+
+        self.key = 0xFF;
     }
 
     pub fn get_display(&self) -> [u8; WIDTH * HEIGHT] {
         self.display
+    }
+
+    pub fn key_press(&mut self, key: u8) {
+        self.key = key;
     }
 
     fn clear_display(&mut self) {
@@ -241,13 +252,19 @@ impl Chip8 {
                     let pixel = self.memory[(self.index + row) as usize];
                     for p in 0..8 {
                         if (pixel & (0x80 >> p)) != 0 {
-                            if x as usize + p as usize >= WIDTH || (y as usize + row as usize) >= HEIGHT {
+                            if x as usize + p as usize >= WIDTH
+                                || (y as usize + row as usize) >= HEIGHT
+                            {
                                 break;
                             }
-                            if self.display[(y as usize + row as usize) * WIDTH + (x as usize + p as usize)] == 1 {
+                            if self.display
+                                [(y as usize + row as usize) * WIDTH + (x as usize + p as usize)]
+                                == 1
+                            {
                                 self.reg[15] = 1;
                             }
-                            self.display[(y as usize + row as usize) * WIDTH + (x as usize + p as usize)] ^= 1;
+                            self.display[(y as usize + row as usize) * WIDTH
+                                + (x as usize + p as usize)] ^= 1;
                         }
                     }
                 }
@@ -255,6 +272,22 @@ impl Chip8 {
             }
             0xE000 => {
                 // Keys
+                let i = ((self.opcode & 0x0F00) >> 8) as usize;
+                match self.opcode & 0x00FF {
+                    0x009E => {
+                        if self.key == self.reg[i] {
+                            self.pc += 2;
+                        }
+                    }
+                    0x00A1 => {
+                        if self.key != self.reg[i] {
+                            self.pc += 2;
+                        }
+                    }
+                    _ => {
+                        println!("{:#04x} is not a valid opcode", self.opcode);
+                    }
+                }
                 self.pc += 2;
             }
             0xF000 => {
@@ -265,8 +298,12 @@ impl Chip8 {
                         self.reg[i] = self.delay_timer;
                     }
                     0x000A => {
-                        // TODO
-                        println!("TODO");
+                        let i = ((self.opcode & 0x0F00) >> 8) as usize;
+                        if self.key != 0xFF {
+                            self.reg[i] = self.key;
+                        } else {
+                            self.pc -= 2;
+                        }
                     }
                     0x0015 => {
                         let i = ((self.opcode & 0x0F00) >> 8) as usize;
