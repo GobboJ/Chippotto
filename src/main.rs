@@ -15,7 +15,7 @@ fn main() {
         .size(WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32)
         .title("Chippotto")
         .build();
-    rl.set_target_fps(60);
+    rl.set_target_fps(500);
 
     // Load game
     let args: Vec<String> = env::args().collect();

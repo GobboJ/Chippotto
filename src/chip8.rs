@@ -61,7 +61,7 @@ impl Chip8 {
             i += 1;
         }
 
-        return chip8;
+        chip8
     }
 
     pub fn load_game(&mut self, data: &[u8]) {
